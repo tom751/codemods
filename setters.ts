@@ -1,4 +1,4 @@
-import { API, FileInfo, Identifier, MemberExpression, StringLiteral } from 'jscodeshift';
+import { API, FileInfo, Identifier, MemberExpression } from 'jscodeshift';
 
 // a.setField('a') => a.field = 'a'
 
@@ -15,7 +15,6 @@ export default function (fileInfo: FileInfo, api: API) {
     })
     .replaceWith((path) => {
       const args = path.node.arguments;
-      const value = (args[0] as StringLiteral).value;
       const callee = path.node.callee as MemberExpression;
       const varName = (callee.object as Identifier).name;
       const setterName = (callee.property as Identifier).name;
@@ -23,11 +22,7 @@ export default function (fileInfo: FileInfo, api: API) {
       const camelCased = newIdentifierName.charAt(0).toLowerCase() + newIdentifierName.slice(1);
 
       return j.expressionStatement(
-        j.assignmentExpression(
-          '=',
-          j.memberExpression(j.identifier(varName), j.identifier(camelCased)),
-          j.stringLiteral(value)
-        )
+        j.assignmentExpression('=', j.memberExpression(j.identifier(varName), j.identifier(camelCased)), args[0] as any)
       );
     })
     .toSource();
